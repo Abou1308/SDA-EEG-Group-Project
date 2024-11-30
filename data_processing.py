@@ -2,6 +2,8 @@ import os
 import pandas as pd
 import numpy as np
 
+import json
+
 # Paths and mappings
 norm_dir = "./norm_data"
 schizo_dir = "./schizo_data"
@@ -91,6 +93,9 @@ combined_data = norm_data + schizo_data
 df = pd.DataFrame(combined_data)
 
 df["freqs"] = df["freqs"].apply(lambda x: str(list(x)) if isinstance(x, (list, np.ndarray)) else x)
+df["power"] = df["power"].apply(lambda x: str(list(x)) if isinstance(x, (list, np.ndarray)) else x)
+
 df.to_excel("eeg_data_expanded.xlsx", index=False)
+
 # print(df.head())
 # df.to_excel("eeg_data_expanded.xlsx", index=False)
