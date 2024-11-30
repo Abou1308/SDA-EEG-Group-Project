@@ -7,7 +7,7 @@ import ast
 norm_dir = "./norm_data"
 schizo_dir = "./schizo_data"
 regions = [
-    "F7", "F3", "F4", "F8", "T3", "C3", "Cz", "C4", 
+    "F7", "F3", "F4", "F8", "T3", "C3", "Cz", "C4",
     "T4", "T5", "P3", "Pz", "P4", "T6", "O1", "O2"
 ]
 
@@ -74,48 +74,48 @@ def load_processed_eeg_data(file_path):
 def normalize_data(input_data):
     # Calculate mean and stdev of each electrode
     normalized_data = []
-    
+
     for index, row in input_data.iterrows():
         power = row['power']
         power = np.array(power)
-        
+
         mean_power = np.mean(power)
         std_power = np.std(power)
-        
+
         # Apply z score normalization
         normalized_power = (power - mean_power) / std_power
-        
+
         normalized_data.append({
             "id": row['id'],
             "schizo": row['schizo'],
             "region": row['region'],
             "freqs": row['freqs'],
-            "normalized_power": normalized_power.tolist()  
+            "normalized_power": normalized_power.tolist()
         })
-    
+
     normalized_df = pd.DataFrame(normalized_data)
     return normalized_df
 
 # Normalize across electrodes for each patient
 def normalize_electrodes(normal_data):
     normalized_data = []
-    
+
     for index, row in normal_data.iterrows():
         normal_power = row['normalized_power']
         normal_power = np.array(normal_power)
-        
+
         mean_normal_power = np.mean(normal_power)
         std_normal_power = np.std(normal_power)
-        
+
         normal_electrode = (normal_power - mean_normal_power) / std_normal_power
         normalized_data.append({
             "id": row['id'],
             "schizo": row['schizo'],
             "region": row['region'],
             "freqs": row['freqs'],
-            "normalized_power": normal_electrode.tolist()  
+            "normalized_power": normal_electrode.tolist()
         })
-        
+
     normalized_electrodes_df = pd.DataFrame(normalized_data)
     return normalized_electrodes_df
 
@@ -124,18 +124,18 @@ def normalize_patients(normal_data):
     # Get the data from all patients
     patient_values = []
     for index,row in normal_data.iterrows():
-        patient_values.extend(row['power'])
-        
+        patient_values.extend(row['normalized_power'])
+
     patient_values = np.array(patient_values)
     total_mean = np.mean(patient_values)
     total_std = np.std(patient_values)
-    
+
     # Normalize data between each patients
     normalized_data = []
     for index, row in normal_data.iterrows():
         power = np.array(row['normalized_power'])
         normal_power = (power - total_mean) / total_std
-        
+
         normalized_data.append({
             "id": row['id'],
             "schizo": row['schizo'],
@@ -143,7 +143,7 @@ def normalize_patients(normal_data):
             "freqs": row['freqs'],
             "normalized_power": normal_power.tolist()
         })
-    
+
     normalized_df = pd.DataFrame(normalized_data)
     return normalized_df
 
@@ -155,18 +155,18 @@ def preprocess():
     combined_data = norm_data + schizo_data
     df = pd.DataFrame(combined_data)
 
-    normalization_fixed = False
+    normalization_fixed = True
     if normalization_fixed:
         normalized_data = normalize_data(df)
         normalized_electrodes = normalize_electrodes(normalized_data)
         normalized_patients = normalize_patients(normalized_electrodes)
-    return df
+    return df, normalized_patients
 
 if __name__ == "__main__":
-    df = preprocess()
-    #if check_file_exists('eeg_data_processed.csv') == False:
-    #    df.to_csv("eeg_data_processed.csv", index=False)
+    df, normalized_patients_df = preprocess()
+    if not check_file_exists('eeg_data_processed.csv'):
+        df.to_csv("eeg_data_processed.csv", index=False)
     print(df.head())
     # Normalization
-    #if check_file_exists('eeg_data_normalized.csv') == False:
-    #    normalized_patients.to_csv("eeg_data_normalized.csv", index=False)
+    if not check_file_exists('eeg_data_normalized.csv'):
+        normalized_patients_df.to_csv("eeg_data_normalized.csv", index=False)
