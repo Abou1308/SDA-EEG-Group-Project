@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-
+import ast
 
 # Paths and mappings
 norm_dir = "./norm_data"
@@ -24,21 +24,21 @@ def process_file(file_path, schizo_label):
 
         fft_result = np.fft.fft(eeg_data_np)
         freqs = np.fft.fftfreq(len(eeg_data_np), 1/128)
+        float_freqs = [float(x) for x in freqs]
 
         fft_magnitude = np.abs(fft_result)
-
+        float_power = [float(x) for x in fft_magnitude]
         # When adding data here, we add a new row per region
         rows.append({
             "id": file_id,
             "schizo": schizo_label,
             "region": region,
             "eeg_data": eeg_data,
-            "freqs": freqs,  # Store the frequency bins
-            "power": fft_magnitude  # Store the magnitude (power) of the FFT
+            "freqs": float_freqs,  # Store the frequency bins
+            "power": float_power  # Store the magnitude (power) of the FFT
         })
 
     return rows
-
 
 def process_directory(directory, schizo_label):
     data = []
@@ -56,6 +56,20 @@ def check_file_exists(filename):
     file_path = os.path.join(current_directory, filename)
     # Check if the file exists
     return os.path.isfile(file_path)
+
+def load_processed_eeg_data(file_path):
+    # Load the Excel file into a DataFrame
+    df = pd.read_csv(file_path)
+
+    # Columns to exclude from conversion
+    excluded_columns = {'id', 'schizo', 'region'}
+
+    # Apply ast.literal_eval to all non-excluded columns
+    for column in df.columns:
+        if column not in excluded_columns:
+            df[column] = df[column].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+
+    return df
 
 def normalize_data(input_data):
     # Calculate mean and stdev of each electrode
@@ -133,17 +147,26 @@ def normalize_patients(normal_data):
     normalized_df = pd.DataFrame(normalized_data)
     return normalized_df
 
-if __name__ == "__main__":
+def preprocess():
+    norm_dir = "./norm_data"
+    schizo_dir = "./schizo_data"
     norm_data = process_directory(norm_dir, schizo_label=0)
     schizo_data = process_directory(schizo_dir, schizo_label=1)
     combined_data = norm_data + schizo_data
     df = pd.DataFrame(combined_data)
-    if check_file_exists('eeg_data_processed.xlsx') == False:
-        df.to_excel("eeg_data_processed.xlsx", index=False)
 
+    normalization_fixed = False
+    if normalization_fixed:
+        normalized_data = normalize_data(df)
+        normalized_electrodes = normalize_electrodes(normalized_data)
+        normalized_patients = normalize_patients(normalized_electrodes)
+    return df
+
+if __name__ == "__main__":
+    df = preprocess()
+    #if check_file_exists('eeg_data_processed.csv') == False:
+    #    df.to_csv("eeg_data_processed.csv", index=False)
+    print(df.head())
     # Normalization
-    normalized_data = normalize_data(df)
-    normalized_electrodes = normalize_electrodes(normalized_data)
-    normalized_patients = normalize_patients(normalized_electrodes)
-    if check_file_exists('eeg_data_normalized.xlsx') == False:
-        normalized_patients.to_excel("eeg_data_normalized.xlsx", index=False)
+    #if check_file_exists('eeg_data_normalized.csv') == False:
+    #    normalized_patients.to_csv("eeg_data_normalized.csv", index=False)
