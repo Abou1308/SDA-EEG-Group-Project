@@ -59,7 +59,6 @@ def process_file(file_path, schizo_label):
         eeg_data = [float(value.strip()) for value in lines[start:end]]
         eeg_data_np = np.array(eeg_data)
 
-    try: # apply fourrier transform to get the data in frequency
         fft_result = np.fft.fft(eeg_data_np)
         freqs = np.fft.fftfreq(len(eeg_data_np), 1/128)
 
@@ -74,8 +73,7 @@ def process_file(file_path, schizo_label):
             "freqs": freqs,  # Store the frequency bins
             "power": fft_magnitude  # Store the magnitude (power) of the FFT
         })
-    except Exception as e:
-        print(f"Error processing region '{region}' in file '{eeg_data}': {e}")  # Log the error
+        
     return rows
 
 def process_directory(directory, schizo_label):
