@@ -160,10 +160,12 @@ def preprocess():
         normalized_data = normalize_data(df)
         normalized_electrodes = normalize_electrodes(normalized_data)
         normalized_patients = normalize_patients(normalized_electrodes)
-    return df, normalized_patients
+    # return df, normalized_patients
+    return df 
 
 if __name__ == "__main__":
-    df, normalized_patients_df = preprocess()
+    # df, normalized_patients_df = preprocess()
+    df = preprocess()
     if not check_file_exists('eeg_data_processed.csv'):
         df.to_csv("eeg_data_processed.csv", index=False)
     print(df.head())
