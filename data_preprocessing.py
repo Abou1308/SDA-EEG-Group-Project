@@ -34,8 +34,14 @@ def process_file(file_path, schizo_label):
             "schizo": schizo_label,
             "region": region,
             "eeg_data": eeg_data,
-            "freqs": float_freqs,  # Store the frequency bins
-            "power": float_power  # Store the magnitude (power) of the FFT
+            "freqs":float_freqs,
+            "power":float_power,
+            "freqs_theta": float_freqs[240:481],
+            "power_theta": float_power[240:481],
+            "freqs_alpha": float_freqs[480:721],
+            "power_alpha": float_power[480:721],
+            "freqs_beta":float_freqs[720:1801],
+            "power_beta":float_power[720:1801]
         })
 
     return rows
@@ -166,9 +172,9 @@ def preprocess():
 if __name__ == "__main__":
     # df, normalized_patients_df = preprocess()
     df = preprocess()
-    if not check_file_exists('eeg_data_processed.csv'):
-        df.to_csv("eeg_data_processed.csv", index=False)
+    #if not check_file_exists('eeg_data_processed.csv'):
+    #    df.to_csv("eeg_data_processed.csv", index=False)
     print(df.head())
     # Normalization
-    if not check_file_exists('eeg_data_normalized.csv'):
-        normalized_patients_df.to_csv("eeg_data_normalized.csv", index=False)
+   # if not check_file_exists('eeg_data_normalized.csv'):
+   #     normalized_patients_df.to_csv("eeg_data_normalized.csv", index=False)
