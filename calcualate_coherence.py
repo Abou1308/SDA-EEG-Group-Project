@@ -37,14 +37,14 @@ def calculate_coherence_regions(region_1, region_2):
     # Calculate coherence for all patients
     for patient in common_id:
         # Extract FFT data for the patient
-        fft_1_alpha = np.array(reg1[reg1['id'] == patient]['freqs_alpha'].values[0])
-        fft_2_alpha = np.array(reg2[reg2['id'] == patient]['freqs_alpha'].values[0])
+        fft_1_alpha = np.array(reg1[reg1['id'] == patient]['power_alpha'].values[0])
+        fft_2_alpha = np.array(reg2[reg2['id'] == patient]['power_alpha'].values[0])
 
-        fft_1_beta = np.array(reg1[reg1['id'] == patient]['freqs_beta'].values[0])
-        fft_2_beta = np.array(reg2[reg2['id'] == patient]['freqs_beta'].values[0])
+        fft_1_beta = np.array(reg1[reg1['id'] == patient]['power_beta'].values[0])
+        fft_2_beta = np.array(reg2[reg2['id'] == patient]['power_beta'].values[0])
 
-        fft_1_theta = np.array(reg1[reg1['id'] == patient]['freqs_theta'].values[0])
-        fft_2_theta = np.array(reg2[reg2['id'] == patient]['freqs_theta'].values[0])
+        fft_1_theta = np.array(reg1[reg1['id'] == patient]['power_theta'].values[0])
+        fft_2_theta = np.array(reg2[reg2['id'] == patient]['power_theta'].values[0])
 
         # Calculate coherence for all frequencies
         coherence_alpha = calculate_coherence(fft_1_alpha, fft_2_alpha)
