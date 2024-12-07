@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 import ast
+from data_preprocessing import preprocess
 # Read CSV file
-file_path = "eeg_data_processed.csv"
-df = pd.read_csv(file_path)
+df = preprocess()
 
 # Convert string-encoded lists back to numerical arrays
-list_columns = ['freqs', 'power', "freqs_theta", "freqs_alpha","freqs_beta",]
+list_columns = ['freqs', 'power', "power_theta", "power_alpha","power_beta",]
 for col in list_columns:
     df[col] = df[col].apply(lambda x: np.array(ast.literal_eval(x)))
 
