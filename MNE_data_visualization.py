@@ -21,7 +21,7 @@ for patient_id, group in patient_groups:
     # Combine data for all 16 channels
     eeg_data_list = group['eeg_data'].tolist()  # Extract EEG data for all rows (16 rows)
     eeg_data = np.array(eeg_data_list)  # Combine into a 2D array
-    eeg_data = eeg_data / 20 #normalise
+    # eeg_data = eeg_data / 20 #normalise
 
     print("EEG data range:", eeg_data.min(), eeg_data.max())
     # eeg_data = eeg_data.T  # Transpose to (n_channels, n_samples)
@@ -42,7 +42,7 @@ for patient_id, group in patient_groups:
     print(raw)
     
     # Step 6: Visualize the EEG data
-    raw.plot_psd(fmin=1, fmax=64, spatial_colors=True, average=True, xscale = "log")
+    raw.plot_psd(fmin=1, fmax=64, spatial_colors=True, average=True)
     
     #If we ever have stimulus we can detect spikes
     # events = mne.find_events(raw)  # Detect events
