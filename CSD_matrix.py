@@ -94,7 +94,7 @@ def plot_correlation_matrices(healthy_patients, schizo_patients, wave_option='po
 
     # Plot for healthy patients
     plt.figure(figsize=(10, 8))
-    sns.heatmap(avg_corr_healthy, annot=True, cmap='coolwarm', fmt='.2f', xticklabels=regions, yticklabels=regions)
+    sns.heatmap(avg_corr_healthy, annot=True, cmap='Oranges', fmt='.2f', xticklabels=regions, yticklabels=regions)
     plt.title(f"Average Correlation Matrix for Healthy Patients ({wave_option.capitalize()})")
     plt.xlabel('Regions (Channels)')
     plt.ylabel('Regions (Channels)')
@@ -102,7 +102,7 @@ def plot_correlation_matrices(healthy_patients, schizo_patients, wave_option='po
 
     # Plot for schizophrenic patients
     plt.figure(figsize=(10, 8))
-    sns.heatmap(avg_corr_schizo, annot=True, cmap='coolwarm', fmt='.2f', xticklabels=regions, yticklabels=regions)
+    sns.heatmap(avg_corr_schizo, annot=True, cmap='Oranges', fmt='.2f', xticklabels=regions, yticklabels=regions)
     plt.title(f"Average Correlation Matrix for Schizophrenic Patients ({wave_option.capitalize()})")
     plt.xlabel('Regions (Channels)')
     plt.ylabel('Regions (Channels)')
@@ -110,7 +110,7 @@ def plot_correlation_matrices(healthy_patients, schizo_patients, wave_option='po
 
     # Plot the correlation difference (healthy - schizo)
     plt.figure(figsize=(10, 8))
-    sns.heatmap(corr_difference, annot=True, cmap='coolwarm', fmt='.2f', xticklabels=regions, yticklabels=regions)
+    sns.heatmap(corr_difference, annot=True, cmap='Oranges', fmt='.2f', xticklabels=regions, yticklabels=regions)
     plt.title('Correlation Difference (Healthy - Schizophrenic)')
     plt.xlabel('Regions (Channels)')
     plt.ylabel('Regions (Channels)')
