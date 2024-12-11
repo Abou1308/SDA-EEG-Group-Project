@@ -1,83 +1,98 @@
 import pandas as pd
 import numpy as np
-import ast
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy import signal
 from data_preprocessing import preprocess
-# Read CSV file
+
+# Preprocess data (assuming it returns a DataFrame)
 df = preprocess()
 
-# Convert string-encoded lists back to numerical arrays
-list_columns = ['freqs', 'power', "power_theta", "power_alpha","power_beta",]
-for col in list_columns:
-    df[col] = df[col].apply(lambda x: np.array(ast.literal_eval(x)))
+# Extract power data for each patient and region
+def extract_power(df, patient_id, frequency_band):
+    # Filter patient data
+    patients = df[df['id'] == patient_id]
+    power_data = []
 
-# Function to calculate the Coherence
-def calculate_coherence(fft1, fft2):
-    # Calculate the power
-    Pxx = np.abs(fft1) ** 2
-    Pyy = np.abs(fft2) ** 2
 
-    # Calculate Cross-spectral Density (CSD)
-    csd = fft1 * np.conj(fft2)
+    # Loop through regions and get the data
+    for region in patients['region'].unique():
+        region_data = patients[patients['region'] == region]
+        power_data.append(region_data[frequency_band].values[0])
 
-    # Calculate Coherence
-    coherence = np.abs(csd) ** 2 / (Pxx * Pyy)
+    power_df = pd.DataFrame(power_data).transpose()
 
-    return coherence
+    # Handle NaN values
+    if power_df.isnull().values.any():
+        print(f"Warning: Missing values detected in power data for patient {patient_id}")
+        # Replace empty values with 0
+        power_df = power_df.fillna(0)
 
-# Calculate coherence for all regions for all patients
-def calculate_coherence_regions(region_1, region_2):
-    coherence_results = []
+    return power_df
 
-    # Filter to only keep wanted regions
-    reg1 = df[df['region'] == region_1]
-    reg2 = df[df['region'] == region_2]
+# Calculate coherence between regions (pairwise)
+def calculate_coherence_regions(power_df, sampling_freq):
+    # Initialize empty matrix for coherence values
+    coherence_matrix_values = np.zeros((len(power_df.columns), len(power_df.columns)))
 
-    common_id = set(reg1['id']).intersection(reg2['id'])
+    # Calculate coherence for each pair of regions
+    for i, region_1 in enumerate(power_df.columns):
+        for j, region_2 in enumerate(power_df.columns):
+            # Compute coherence between two regions (channels)
+            _, coherence_values = signal.coherence(power_df[region_1], power_df[region_2], fs=128, nperseg=256)
+            coherence_matrix_values[i, j] = np.mean(coherence_values)  # Take the mean of coherence values
+    return coherence_matrix_values
 
-    # Calculate coherence for all patients
-    for patient in common_id:
-        # Extract FFT data for the patient
-        fft_1_alpha = np.array(reg1[reg1['id'] == patient]['power_alpha'].values[0])
-        fft_2_alpha = np.array(reg2[reg2['id'] == patient]['power_alpha'].values[0])
+# Average coherence across multiple patients
+def average_coherence(patient_ids, wave_option='power_beta'):
+    # List comprehension to calculate coherence matrices for all patients
+    coherence_matrices = [
+        calculate_coherence_regions(extract_power(df, patient_id, wave_option), sampling_freq=128)
+        for patient_id in patient_ids
+    ]
+    # Calculate the average coherence matrix by stacking all matrices and taking the mean
+    average_coherence_matrix = np.mean(coherence_matrices, axis=0)
 
-        fft_1_beta = np.array(reg1[reg1['id'] == patient]['power_beta'].values[0])
-        fft_2_beta = np.array(reg2[reg2['id'] == patient]['power_beta'].values[0])
+    # Return as a DataFrame
+    return pd.DataFrame(average_coherence_matrix)
 
-        fft_1_theta = np.array(reg1[reg1['id'] == patient]['power_theta'].values[0])
-        fft_2_theta = np.array(reg2[reg2['id'] == patient]['power_theta'].values[0])
 
-        # Calculate coherence for all frequencies
-        coherence_alpha = calculate_coherence(fft_1_alpha, fft_2_alpha)
-        coherence_beta = calculate_coherence(fft_1_beta, fft_2_beta)
-        coherence_theta = calculate_coherence(fft_1_theta, fft_2_theta)
+# Plot coherence matrices for healthy vs schizophrenic patients
+def plot_correlation_matrix(healthy_patients, schizo_patients, wave_option='power_beta'):
+    # Calculate average coherence for healthy and schizophrenic patients
+    avg_coherence_healthy = average_coherence(healthy_patients, wave_option=wave_option)
+    avg_coherence_schizo = average_coherence(schizo_patients, wave_option=wave_option)
 
-        freqs = np.array(reg1[reg1['id'] == patient]['freqs'].values[0])
+    # Calculate coherence difference (healthy - schizo)
+    coherence_difference = avg_coherence_healthy - avg_coherence_schizo
 
-        coherence_results.append({
-            "id": patient,
-            "region_1": region_1,
-            "region_2": region_2,
-            "frequencies": freqs.tolist(),
-            "coherence_alpha": coherence_alpha.tolist(),
-            "coherence_beta": coherence_beta.tolist(),
-            "coherence_theta": coherence_theta.tolist()
-        })
+    regions = avg_coherence_healthy.columns.tolist()  # Get region names from columns
 
-    return pd.DataFrame(coherence_results)
+    # Plot for healthy patients
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(avg_coherence_healthy, annot=True, cmap='Oranges', fmt='.2f', xticklabels=regions, yticklabels=regions)
+    plt.title(f"Average Coherence Matrix for Healthy Patients ({wave_option.capitalize()})")
+    plt.xlabel('Regions (Channels)')
+    plt.ylabel('Regions (Channels)')
+    plt.show()
 
-regions = [
-    "F7", "F3", "F4", "F8", "T3", "C3", "Cz", "C4",
-    "T4", "T5", "P3", "Pz", "P4", "T6", "O1", "O2"
-]
+    # Plot for schizophrenic patients
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(avg_coherence_schizo, annot=True, cmap='Oranges', fmt='.2f', xticklabels=regions, yticklabels=regions)
+    plt.title(f"Average Coherence Matrix for Schizophrenic Patients ({wave_option.capitalize()})")
+    plt.xlabel('Regions (Channels)')
+    plt.ylabel('Regions (Channels)')
+    plt.show()
 
-# Calculate coherence for all the regions
-all_coherence = []
-# Loop over region 1 and 2
-for i, region_1 in enumerate(regions):
-    for region_2 in regions[i+1:]:
-        # Calcualte coherence
-        region_coherence = calculate_coherence_regions(region_1, region_2)
-        all_coherence.append(region_coherence)
-final_coherence_df = pd.concat(all_coherence, ignore_index = True)
+    # Plot coherence difference (healthy - schizo)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(coherence_difference, annot=True, cmap='Oranges', fmt='.2f', xticklabels=regions, yticklabels=regions)
+    plt.title('Coherence Difference (Healthy - Schizophrenic)')
+    plt.xlabel('Regions (Channels)')
+    plt.ylabel('Regions (Channels)')
+    plt.show()
 
-final_coherence_df.to_csv("all_region_coherence.csv", index=False)
+# Example: Plot the correlation matrices
+healthy_patients = df[df['schizo'] == 0]['id'].unique().tolist()
+schizo_patients = df[df['schizo'] == 1]['id'].unique().tolist()
+plot_correlation_matrix(healthy_patients, schizo_patients, wave_option='power_beta')
