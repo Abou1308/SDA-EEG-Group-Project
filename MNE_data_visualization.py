@@ -33,18 +33,21 @@ for patient_id, group in patient_groups:
     print(f"EEG data shape for patient {patient_id}: {eeg_data.shape}")
     
     # Step 4: Create MNE Info object
-    sfreq = 128  # Replace with your actual sampling frequency
-    ch_names = [f"Ch{i+1}" for i in range(16)]  # Create channel names for 16 channels
+    sfreq = 128 
+    ch_names = [f"Ch{i+1}" for i in range(16)] 
     info = mne.create_info(ch_names=ch_names, sfreq=sfreq, ch_types=['eeg'] * 16)
     
     # Step 5: Create the RawArray
     raw = mne.io.RawArray(eeg_data, info)
     print(raw)
+
+    # Apply band-pass filter between 4 and 30 Hz
+    raw.filter(l_freq=4, h_freq=30)
     
     # Step 6: Visualize the EEG data
-    raw.plot_psd(fmin=1, fmax=64, spatial_colors=True, average=True)
+    raw.plot_psd(fmin=4, fmax=30, spatial_colors=True, average=True)
     
-    #If we ever have stimulus we can detect spikes
+    # If we ever have stimulus we can detect spikes
     # events = mne.find_events(raw)  # Detect events
     # raw.plot(events=events, event_color='red')
     mapping = {
