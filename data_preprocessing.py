@@ -1,7 +1,9 @@
+# This file is not supposed to be ran on itself. The intended way to use this is to import the preprocess()
+# function contained in this file, which would turn the .eea data into a usable pandas dataframe.
+
 import os
 import pandas as pd
 import numpy as np
-import ast
 
 # Paths and mappings
 norm_dir = "./norm_data"
@@ -12,20 +14,28 @@ regions = [
 ]
 
 def process_file(file_path, schizo_label):
+    """
+    Function processes an .eea file and returns the preprocessed eeg data after performing a fast fourier
+    transform. It further divides the frequencies and powers based on the corresponding brain wave.
+    """
+    # Read lines
     with open(file_path, "r") as file:
         lines = file.readlines()
     rows = []
     file_id = os.path.basename(file_path).replace(".eea", "")
+
+    # Each file has 16 regions. Each 7680 line combination is a different region, we loop through the file in 
+    # intervals of 7680 to cover each region.
     for i, region in enumerate(regions):
         start = i * 7680
         end = start + 7680
         eeg_data = [float(value.strip()) for value in lines[start:end]]
         eeg_data_np = np.array(eeg_data)
 
+        # Perform fast fourier transform and perform a simple list comprehension for formatting
         fft_result = np.fft.fft(eeg_data_np)
         freqs = np.fft.fftfreq(len(eeg_data_np), 1/128)
         float_freqs = [float(x) for x in freqs]
-
         fft_magnitude = np.abs(fft_result)
         float_power = [float(x) for x in fft_magnitude]
         # When adding data here, we add a new row per region
@@ -47,35 +57,17 @@ def process_file(file_path, schizo_label):
     return rows
 
 def process_directory(directory, schizo_label):
+    """
+    Processes each file in a folder, which in our case is norm_data for all healthy patients and
+    schizo_data for all schizophrenic patients. schizo_label should contain whether the folder is for 
+    schizophrenic or healthy patients.
+    """
     data = []
     for file_name in os.listdir(directory):
         if file_name.endswith(".eea"):
             file_path = os.path.join(directory, file_name)
             data.extend(process_file(file_path, schizo_label))
     return data
-
-
-def check_file_exists(filename):
-    # Get the absolute path of the current script's directory
-    current_directory = os.path.dirname(os.path.abspath(__file__))
-    # Construct the full path to the file
-    file_path = os.path.join(current_directory, filename)
-    # Check if the file exists
-    return os.path.isfile(file_path)
-
-def load_processed_eeg_data(file_path):
-    # Load the Excel file into a DataFrame
-    df = pd.read_csv(file_path)
-
-    # Columns to exclude from conversion
-    excluded_columns = {'id', 'schizo', 'region'}
-
-    # Apply ast.literal_eval to all non-excluded columns
-    for column in df.columns:
-        if column not in excluded_columns:
-            df[column] = df[column].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
-
-    return df
 
 def normalize_data(input_data):
     # Calculate mean and stdev of each electrode
@@ -153,28 +145,24 @@ def normalize_patients(normal_data):
     normalized_df = pd.DataFrame(normalized_data)
     return normalized_df
 
-def preprocess():
+def preprocess(normalization=False):
+    """
+    The main function which when called, should return a pandas dataframe with all required information.
+    """
+    # Define directory and process them both
     norm_dir = "./norm_data"
     schizo_dir = "./schizo_data"
     norm_data = process_directory(norm_dir, schizo_label=0)
     schizo_data = process_directory(schizo_dir, schizo_label=1)
+    # Combine them en return it as a pandas dataframe.
     combined_data = norm_data + schizo_data
     df = pd.DataFrame(combined_data)
 
-    normalization_fixed = True
-    if normalization_fixed:
+    if normalization:
         normalized_data = normalize_data(df)
         normalized_electrodes = normalize_electrodes(normalized_data)
         normalized_patients = normalize_patients(normalized_electrodes)
-    # return df, normalized_patients
-    return df 
+        return normalized_patients
+    else:
+        return df
 
-if __name__ == "__main__":
-    # df, normalized_patients_df = preprocess()
-    df = preprocess()
-    #if not check_file_exists('eeg_data_processed.csv'):
-    #    df.to_csv("eeg_data_processed.csv", index=False)
-    print(df.head())
-    # Normalization
-   # if not check_file_exists('eeg_data_normalized.csv'):
-   #     normalized_patients_df.to_csv("eeg_data_normalized.csv", index=False)
