@@ -13,4 +13,6 @@ Scientific Data Analysis Group Project
 - bootstrapping.ipynb contains the code necessary to get the p-value matrices for each wave regarding CSD. The sample size and number of iteration used is lowered to make computation faster, so whilst it may not be super accurate, it is still possible to see the general trend.
 - The Test2_Procedure Notebook will walk you through the 2nd statistical analysis procedure we performed to assess how significant are the CSD differences between both groups (healthy & diagnosed schizophrenic groups)
 
+-The 'coherence_matrix' notebook calculates the coherence of the regions (the functional connectivity) in healthy and schizophrenic patients. Because the coherence and CSD matrices we calculated looked identical, we decided to continue the analysis on the CSD values because they are computationally less heavy, and therefore would allow for easier analysis. 
+-The 'AR_surrogate_shuffle' notebook calculated an autoregression model (AR) on the original data and extracted the residuals of this AR with the aim to create a surrogate data to test the null hypothesis. Residual shuffling did not result in a very different surrogate dataset, which then not result in a significant H0 testing. We therefor did not present this data, although we mentioned we tried AR H0 testing. 
 
